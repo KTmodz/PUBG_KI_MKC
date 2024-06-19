@@ -1,2 +1,2 @@
-# PUBG_KI_MKC
-X
+# ddos
+# By Indian Watchdogs @Indian_Hackers_Team
